@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuito motor de los ganglios basales</title>
+<style>
+  :root {
+    --c-glut: #e57373;
+    --c-gaba: #5c9fd1;
+    --c-dopa: #9575cd;
+    --c-fondo: #fafafa;
+    --c-panel: #ffffff;
+    --c-borde: #d6d6d6;
+    --c-texto: #212121;
+    --c-texto-suave: #555555;
+    --c-acento: #1a237e;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--c-fondo);
+    color: var(--c-texto);
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 16px;
+  }
+  header {
+    flex: 0 0 auto;
+    padding: 12px 20px;
+    background: var(--c-acento);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16px;
+  }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; flex: 1; }
+  header .right-grp { display: flex; align-items: center; gap: 16px; }
+  header .credito { font-size: 14px; opacity: 0.9; }
+
+  .lang-toggle {
+    display: inline-flex;
+    background: rgba(255,255,255,0.15);
+    border-radius: 18px;
+    padding: 3px;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .lang-toggle button {
+    background: transparent;
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 14px;
+    letter-spacing: 0.5px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .lang-toggle button.activo {
+    background: white;
+    color: var(--c-acento);
+  }
+
+  .layout {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: 260px 1fr 340px;
+    gap: 12px;
+    padding: 12px;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .panel {
+    background: var(--c-panel);
+    border: 1px solid var(--c-borde);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--c-acento);
+    border-bottom: 2px solid var(--c-acento);
+    padding-bottom: 6px;
+  }
+  .panel h3 {
+    margin: 16px 0 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--c-texto-suave);
+  }
+
+  .slider-bloque {
+    padding: 12px 14px;
+    background: #f3e5f5;
+    border-radius: 6px;
+    border-left: 4px solid var(--c-dopa);
+  }
+  .slider-bloque label {
+    display: block; font-size: 14px; font-weight: 700;
+    color: #6a1b9a; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 4px;
+  }
+  .slider-bloque .valor {
+    font-size: 26px; font-weight: 700; color: var(--c-dopa); margin-bottom: 6px;
+  }
+  .slider-bloque input[type="range"] { width: 100%; accent-color: var(--c-dopa); margin: 0; }
+
+  .ayuda {
+    font-size: 14px;
+    color: var(--c-texto-suave);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  button.reset {
+    width: 100%;
+    padding: 11px;
+    font-size: 15px;
+    color: var(--c-texto);
+    background: white;
+    border: 1px solid var(--c-borde);
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+  button.reset:hover { background: #f0f0f0; }
+
+  .diagrama-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+  svg.circuito {
+    width: 100%;
+    height: 100%;
+    max-height: calc(100vh - 130px);
+    display: block;
+  }
+
+  /* Leyenda con símbolos */
+  .leyenda {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--c-texto);
+    padding-top: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .leyenda-item { display: flex; align-items: center; gap: 8px; }
+  .leyenda-item svg { display: block; flex: 0 0 auto; }
+  .leyenda-item .desc {
+    display: flex; flex-direction: column; line-height: 1.15;
+  }
+  .leyenda-item .desc .neuro { font-weight: 700; }
+  .leyenda-item .desc .efecto { font-size: 12px; color: var(--c-texto-suave); }
+
+  /* Nodos */
+  .nodo-rect {
+    rx: 5;
+    transition: fill 0.25s ease, opacity 0.2s, stroke-width 0.2s;
+    stroke-width: 1.8;
+    cursor: pointer;
+  }
+  .nodo-rect.off { opacity: 0.4; }
+  .nodo-rect:hover { stroke-width: 3; }
+  .nodo-label {
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    text-anchor: middle; pointer-events: none; fill: #1a237e;
+  }
+  .nodo-sublabel {
+    font-family: inherit; font-size: 13px;
+    text-anchor: middle; pointer-events: none;
+    fill: #455a64; font-style: italic;
+  }
+  .nodo-act {
+    font-family: inherit; font-size: 14px; font-weight: 700;
+    text-anchor: middle; pointer-events: none; fill: #1a237e;
+  }
+
+  /* Botón "i" */
+  .nodo-btn { cursor: pointer; }
+  .nodo-btn .btn-bg {
+    fill: white;
+    stroke: #455a64;
+    stroke-width: 1.6;
+    transition: fill 0.15s, stroke 0.15s;
+  }
+  .nodo-btn:hover .btn-bg { fill: #0277bd; stroke: #0277bd; }
+  .nodo-btn:hover .btn-symbol { fill: white; }
+  .nodo-btn .btn-symbol {
+    font-family: 'Georgia', serif;
+    font-size: 16px; font-weight: 700; font-style: italic;
+    text-anchor: middle; pointer-events: none; fill: #455a64;
+  }
+  .nodo-btn.activo .btn-bg { fill: #c62828; stroke: #c62828; }
+  .nodo-btn.activo .btn-symbol { fill: white; }
+
+  /* Conexiones */
+  .conn-base {
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    transition: stroke-width 0.3s, opacity 0.25s;
+    cursor: help;
+  }
+  .conn-base.off { opacity: 0.12; }
+  .conn-flow {
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-dasharray: 7 14;
+    pointer-events: none;
+    animation: flow var(--flow-dur, 2s) linear infinite;
+    opacity: 0.85;
+  }
+  .conn-flow.off { animation: none; opacity: 0; }
+  @keyframes flow { to { stroke-dashoffset: -42; } }
+
+  .talamo-container {
+    fill: #fff8e1; fill-opacity: 0.7;
+    stroke: #c0a36e; stroke-width: 1.3;
+    stroke-dasharray: 4,3; rx: 8;
+  }
+  .talamo-label {
+    font-size: 15px; font-weight: 700; fill: #8d6e00;
+    text-anchor: middle; letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  .tooltip-bg { fill: #263238; rx: 4; pointer-events: none; }
+  .tooltip-text {
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    fill: white; text-anchor: middle; pointer-events: none;
+  }
+
+  /* Panel derecho */
+  .output-bloque {
+    padding: 13px 15px;
+    background: #e8f5e9;
+    border-radius: 6px;
+    border-top: 4px solid #2e7d32;
+    margin-bottom: 12px;
+  }
+  .output-bloque .titulo {
+    font-size: 13px; font-weight: 700; color: #1b5e20;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px;
+  }
+  .output-bloque .estado-cualitativo {
+    font-size: 26px; font-weight: 700; line-height: 1.1; margin-bottom: 8px;
+  }
+  .output-bloque .interpretacion {
+    font-size: 15px; color: var(--c-texto); margin-top: 8px; line-height: 1.5;
+  }
+  .output-bloque .interpretacion strong { color: var(--c-acento); }
+  .bar-track {
+    width: 100%; height: 10px; background: #eceff1;
+    border-radius: 5px; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 5px; transition: width 0.3s ease;
+  }
+
+  .info-nodo {
+    padding: 14px;
+    background: #e3f2fd;
+    border-radius: 6px;
+    border-left: 4px solid #0277bd;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .info-nodo.placeholder {
+    background: #f5f5f5; border-color: #bdbdbd;
+    color: var(--c-texto-suave); font-style: italic;
+  }
+  .info-nodo .titulo {
+    font-size: 18px; font-weight: 700;
+    color: #01579b; margin-bottom: 4px;
+  }
+  .info-nodo .badge {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    padding: 3px 10px; border-radius: 12px;
+    background: white; color: #01579b; margin-bottom: 8px;
+  }
+  .info-nodo p { margin: 6px 0; }
+  .info-nodo .estado-act {
+    font-size: 14px; font-weight: 700;
+    color: #01579b; padding: 5px 10px;
+    background: white; border-radius: 5px;
+    display: inline-block; margin: 4px 0;
+  }
+  .info-nodo .seccion {
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px solid rgba(2, 119, 189, 0.2);
+  }
+  .info-nodo .seccion-titulo {
+    font-size: 12px; font-weight: 700;
+    color: #01579b; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 4px;
+  }
+  .info-nodo .cerrar {
+    float: right; cursor: pointer; padding: 2px 10px;
+    background: white; border-radius: 4px;
+    font-size: 20px; line-height: 1; color: #0277bd;
+    border: none; font-weight: 700;
+  }
+  .info-nodo .receptores-bloque {
+    margin-top: 12px; padding: 10px 12px;
+    background: rgba(255,255,255,0.7);
+    border-left: 3px solid #6a1b9a;
+    border-radius: 4px;
+  }
+  .info-nodo .receptores-bloque h4 {
+    margin: 0 0 6px; font-size: 13px;
+    color: #6a1b9a; text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .info-nodo .receptores-bloque .receptor {
+    display: grid; grid-template-columns: 38px 1fr;
+    gap: 8px; align-items: start; margin: 6px 0;
+    font-size: 13px; line-height: 1.45;
+  }
+  .info-nodo .receptores-bloque .chip {
+    display: inline-block; padding: 2px 6px;
+    border-radius: 4px; font-weight: 700;
+    font-size: 12px; text-align: center;
+  }
+  .info-nodo .receptores-bloque .chip.d1 {
+    background: #c8e6c9; color: #1b5e20;
+  }
+  .info-nodo .receptores-bloque .chip.d2 {
+    background: #ffccbc; color: #bf360c;
+  }
+
+  .nota-modelo {
+    padding: 12px 14px;
+    background: #fff8e1;
+    border-radius: 6px;
+    border-left: 4px solid #f9a825;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--c-texto);
+    margin-bottom: 12px;
+  }
+  .nota-modelo .titulo {
+    font-size: 12px; font-weight: 700;
+    color: #8d6e00; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 6px;
+  }
+  .nota-modelo p { margin: 4px 0; }
+
+  footer {
+    flex: 0 0 auto;
+    padding: 6px 18px;
+    text-align: center;
+    color: var(--c-texto-suave);
+    font-size: 13px;
+    background: white;
+    border-top: 1px solid var(--c-borde);
+  }
+  footer strong { color: var(--c-texto); }
+
+  @media (max-width: 1300px) {
+    .layout { grid-template-columns: 230px 1fr 310px; }
+  }
+
+  /* =====================================================
+     RESPONSIVE: tablet y celular
+     ===================================================== */
+  @media (max-width: 900px) {
+    /* Permitir scroll vertical en pantallas pequeñas */
+    body { overflow: auto; font-size: 15px; }
+    html, body { height: auto; min-height: 100%; }
+
+    header {
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+    header h1 {
+      font-size: 16px;
+      flex: 1 1 100%;
+      order: 1;
+    }
+    header .right-grp {
+      flex: 1 1 100%;
+      order: 2;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    header .credito { font-size: 12px; }
+
+    /* Apilar paneles verticalmente */
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      overflow: visible;
+    }
+    .panel {
+      overflow-y: visible;
+      max-height: none;
+    }
+
+    /* Reordenar: diagrama primero, controles abajo */
+    .diagrama-wrap { order: 1; padding: 4px; }
+    aside.panel:first-of-type { order: 2; }       /* panel izquierdo */
+    aside.panel:last-of-type  { order: 3; }       /* panel derecho */
+
+    svg.circuito {
+      max-height: 70vh;
+      height: auto;
+      width: 100%;
+    }
+
+    /* Leyenda compacta */
+    .leyenda { gap: 14px; font-size: 13px; }
+
+    /* Slider más cómodo para tocar */
+    .slider-bloque input[type="range"] { height: 28px; }
+    .slider-bloque .valor { font-size: 24px; }
+
+    /* Botones reset y toggle con altura mínima cómoda */
+    button.reset { padding: 14px; font-size: 16px; }
+    .lang-toggle button { padding: 6px 14px; font-size: 14px; }
+
+    /* Output bloque más compacto */
+    .output-bloque .estado-cualitativo { font-size: 22px; }
+    .output-bloque .interpretacion { font-size: 14px; }
+
+    /* Info nodo */
+    .info-nodo { font-size: 14px; padding: 12px; }
+    .info-nodo .titulo { font-size: 16px; }
+    .info-nodo .cerrar { padding: 4px 14px; font-size: 22px; }
+
+    .nota-modelo { font-size: 12px; padding: 10px 12px; }
+
+    footer { padding: 8px 14px; font-size: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    /* Celular pequeño */
+    body { font-size: 14px; }
+    header { padding: 8px 12px; }
+    header h1 { font-size: 14px; line-height: 1.3; }
+    .layout { padding: 8px; gap: 8px; }
+    .panel { padding: 12px 12px; }
+    .panel h2 { font-size: 14px; }
+    .panel h3 { font-size: 13px; }
+    .leyenda { gap: 10px; font-size: 12px; }
+    svg.circuito { max-height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 data-i18n="title">Circuito motor de los ganglios basales · Herramienta interactiva</h1>
+  <div class="right-grp">
+    <div class="lang-toggle" role="group" aria-label="Idioma">
+      <button type="button" id="lang-es" class="activo" data-lang="es">ES</button>
+      <button type="button" id="lang-en" data-lang="en">EN</button>
+    </div>
+    <span class="credito">Carolina Astudillo V.</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="panel">
+    <h2 data-i18n="panelLeftTitle">Modulación dopaminérgica</h2>
+
+    <div class="slider-bloque">
+      <label for="slider-dopamina" data-i18n="sliderLabel">Dopamina nigroestriatal</label>
+      <div class="valor"><span id="da-valor">100</span><span style="font-size:15px;color:var(--c-texto-suave);"> %</span></div>
+      <input type="range" id="slider-dopamina" min="0" max="100" value="100" step="1">
+    </div>
+
+    <button class="reset" id="btn-reset" data-i18n="btnReset">Restablecer todo</button>
+
+    <h3 data-i18n="howUseTitle">Cómo usar</h3>
+    <p class="ayuda" data-i18n="howUseText" data-i18n-html="1">
+      <strong>Click sobre un núcleo</strong> para apagarlo o encenderlo.<br>
+      <strong>Click en el botón <em>i</em></strong> para ver qué está pasando con él.
+    </p>
+
+    <h3 data-i18n="visualHintTitle">Pista visual</h3>
+    <p class="ayuda" data-i18n="visualHintText" data-i18n-html="1">
+      El <strong>color</strong> del núcleo refleja su descarga.<br>
+      El <strong>grosor</strong> y la <strong>velocidad del flujo</strong> de cada conexión reflejan la fuerza transmitida.
+    </p>
+
+    <h3 data-i18n="symbolsTitle">Convención de símbolos</h3>
+    <p class="ayuda" data-i18n="symbolsText" data-i18n-html="1">
+      Cada axón comienza con un <strong>círculo</strong> (soma) y termina con una <strong>flecha</strong> (terminal axónico). El neurotransmisor lo indica el color.
+    </p>
+  </aside>
+
+  <main class="panel diagrama-wrap">
+    <svg class="circuito" viewBox="0 0 700 730" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- Marcadores de INICIO (soma): círculo pequeño relleno. Mismo símbolo para todos los neurotransmisores, color distingue. -->
+        <marker id="m-soma-glut" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="2.8" markerHeight="2.8" orient="auto">
+          <circle cx="3" cy="3" r="2.5" fill="var(--c-glut)"/>
+        </marker>
+        <marker id="m-soma-gaba" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="2.8" markerHeight="2.8" orient="auto">
+          <circle cx="3" cy="3" r="2.5" fill="var(--c-gaba)"/>
+        </marker>
+        <marker id="m-soma-dopa" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="2.8" markerHeight="2.8" orient="auto">
+          <circle cx="3" cy="3" r="2.5" fill="var(--c-dopa)"/>
+        </marker>
+
+        <!-- Marcadores de TERMINAL: flecha pequeña. Mismo símbolo para todos. -->
+        <marker id="m-end-glut" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse">
+          <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--c-glut)"/>
+        </marker>
+        <marker id="m-end-gaba" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse">
+          <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--c-gaba)"/>
+        </marker>
+        <marker id="m-end-dopa" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse">
+          <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--c-dopa)"/>
+        </marker>
+      </defs>
+
+      <!-- Contenedor Tálamo -->
+      <g class="talamo-grupo">
+        <rect class="talamo-container" x="500" y="195" width="190" height="155"/>
+        <text class="talamo-label" x="595" y="188" data-i18n="talamoLabelInside">Tálamo</text>
+      </g>
+
+      <!-- Conexiones (ruteo ortogonal) -->
+      <g id="conexiones">
+
+        <!-- 1. Corteza → Estriado (glut) -->
+        <path class="conn-base" data-conn="ctx-estriado" data-tip-key="ctx-estriado"
+              d="M 330 70 L 330 200" stroke="var(--c-glut)"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="ctx-estriado" d="M 330 70 L 330 200" stroke="#fff9c4" stroke-width="3"/>
+
+        <!-- 2. Corteza → STN (hiperdirecta, glut) -->
+        <path class="conn-base" data-conn="ctx-stn" data-tip-key="ctx-stn"
+              d="M 95 70 L 95 585" stroke="var(--c-glut)"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="ctx-stn" d="M 95 70 L 95 585" stroke="#fff9c4" stroke-width="3"/>
+
+        <!-- 3. SNc → Estriado (dopamina) -->
+        <path class="conn-base" data-conn="snc-estriado" data-tip-key="snc-estriado"
+              d="M 330 445 L 330 335" stroke="var(--c-dopa)"
+              marker-start="url(#m-soma-dopa)" marker-end="url(#m-end-dopa)"/>
+        <path class="conn-flow" data-flow="snc-estriado" d="M 330 445 L 330 335" stroke="#ede7f6" stroke-width="3"/>
+
+        <!-- 4. CM/Pf → Estriado (glut) -->
+        <path class="conn-base" data-conn="cmpf-estriado" data-tip-key="cmpf-estriado"
+              d="M 510 235 L 440 235" stroke="var(--c-glut)"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="cmpf-estriado" d="M 510 235 L 440 235" stroke="#fff9c4" stroke-width="3"/>
+
+        <!-- 5. Estriado → GPe (GABA, vía indirecta) -->
+        <path class="conn-base" data-conn="estriado-gpe" data-tip-key="estriado-gpe"
+              d="M 260 335 L 260 410 L 200 410" stroke="var(--c-gaba)"
+              marker-start="url(#m-soma-gaba)" marker-end="url(#m-end-gaba)"/>
+        <path class="conn-flow" data-flow="estriado-gpe" d="M 260 335 L 260 410 L 200 410" stroke="#e1f5fe" stroke-width="3"/>
+
+        <!-- 6. Estriado → GPi (GABA, vía directa) -->
+        <path class="conn-base" data-conn="estriado-gpi" data-tip-key="estriado-gpi"
+              d="M 430 335 L 430 585" stroke="var(--c-gaba)"
+              marker-start="url(#m-soma-gaba)" marker-end="url(#m-end-gaba)"/>
+        <path class="conn-flow" data-flow="estriado-gpi" d="M 430 335 L 430 585" stroke="#e1f5fe" stroke-width="3"/>
+
+        <!-- 7. GPe → STN (GABA) -->
+        <path class="conn-base" data-conn="gpe-stn" data-tip-key="gpe-stn"
+              d="M 145 460 L 145 585" stroke="var(--c-gaba)"
+              marker-start="url(#m-soma-gaba)" marker-end="url(#m-end-gaba)"/>
+        <path class="conn-flow" data-flow="gpe-stn" d="M 145 460 L 145 585" stroke="#e1f5fe" stroke-width="3"/>
+
+        <!-- 8. STN → GPi (glut) -->
+        <path class="conn-base" data-conn="stn-gpi" data-tip-key="stn-gpi"
+              d="M 215 627 L 420 627" stroke="var(--c-glut)"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="stn-gpi" d="M 215 627 L 420 627" stroke="#fff9c4" stroke-width="3"/>
+
+        <!-- 9. GPi → Tálamo VA/VL (GABA, freno tónico) -->
+        <path class="conn-base" data-conn="gpi-talamo" data-tip-key="gpi-talamo"
+              d="M 590 615 L 660 615 L 660 340" stroke="var(--c-gaba)"
+              marker-start="url(#m-soma-gaba)" marker-end="url(#m-end-gaba)"/>
+        <path class="conn-flow" data-flow="gpi-talamo" d="M 590 615 L 660 615 L 660 340" stroke="#e1f5fe" stroke-width="3"/>
+
+        <!-- 10. GPi → CM/Pf (GABA, loop intratálamo) -->
+        <path class="conn-base" data-conn="gpi-cmpf" data-tip-key="gpi-cmpf"
+              d="M 540 585 L 540 260" stroke="var(--c-gaba)"
+              marker-start="url(#m-soma-gaba)" marker-end="url(#m-end-gaba)"/>
+        <path class="conn-flow" data-flow="gpi-cmpf" d="M 540 585 L 540 260" stroke="#e1f5fe" stroke-width="3"/>
+
+        <!-- 11. Tálamo VA/VL → Corteza (glut, output) -->
+        <path class="conn-base" data-conn="talamo-ctx" data-tip-key="talamo-ctx"
+              d="M 640 245 L 640 105 L 570 105 L 570 70" stroke="var(--c-glut)"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="talamo-ctx" d="M 640 245 L 640 105 L 570 105 L 570 70" stroke="#fff9c4" stroke-width="3"/>
+
+        <!-- 12. GPi → PPN (GABA) -->
+        <path class="conn-base" data-conn="gpi-ppn" data-tip-key="gpi-ppn"
+              d="M 480 670 L 480 695 L 460 695" stroke="var(--c-gaba)"
+              marker-start="url(#m-soma-gaba)" marker-end="url(#m-end-gaba)"/>
+        <path class="conn-flow" data-flow="gpi-ppn" d="M 480 670 L 480 695 L 460 695" stroke="#e1f5fe" stroke-width="3"/>
+
+        <!-- 13. PPN → Tronco/CPGs (glut) -->
+        <path class="conn-base" data-conn="ppn-tronco" data-tip-key="ppn-tronco"
+              d="M 290 695 L 108 695" stroke="var(--c-glut)"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="ppn-tronco" d="M 290 695 L 108 695" stroke="#fff9c4" stroke-width="3"/>
+
+        <!-- 14. PPN → Tálamo VA/VL (glut, modulación ascendente) -->
+        <path class="conn-base" data-conn="ppn-talamo" data-tip-key="ppn-talamo"
+              d="M 460 690 L 695 690 L 695 295 L 680 295" stroke="var(--c-glut)" stroke-dasharray="6 4"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="ppn-talamo" d="M 460 690 L 695 690 L 695 295 L 680 295" stroke="#fff9c4" stroke-width="2.5"/>
+
+        <!-- 15. PPN → SNc (glut/colinérgica, modulación) -->
+        <path class="conn-base" data-conn="ppn-snc" data-tip-key="ppn-snc"
+              d="M 320 675 L 320 500" stroke="var(--c-glut)" stroke-dasharray="6 4"
+              marker-start="url(#m-soma-glut)" marker-end="url(#m-end-glut)"/>
+        <path class="conn-flow" data-flow="ppn-snc" d="M 320 675 L 320 500" stroke="#fff9c4" stroke-width="2.5"/>
+      </g>
+
+      <!-- Nodos -->
+      <g id="nodos">
+        <g class="nodo" data-nodo="corteza">
+          <rect class="nodo-rect" id="rect-corteza" x="60" y="20" width="540" height="50" fill="#cfd8dc" stroke="#546e7a"/>
+          <text class="nodo-label" x="330" y="44" data-i18n="cortexLabel">Corteza cerebral</text>
+          <text class="nodo-sublabel" x="330" y="62">SMA · PM · M1</text>
+        </g>
+
+        <g class="nodo" data-nodo="estriado">
+          <rect class="nodo-rect" id="rect-estriado" x="240" y="200" width="200" height="135" fill="#cfd8dc" stroke="#546e7a"/>
+          <text class="nodo-label" x="340" y="244" data-i18n="striatumLabel">Estriado</text>
+          <text class="nodo-sublabel" x="340" y="262" data-i18n="striatumSub">dorsolateral · putamen</text>
+          <text class="nodo-act" id="act-estriado" x="340" y="304">—</text>
+          <g class="nodo-btn" data-action="info" data-nodo="estriado">
+            <circle class="btn-bg" cx="422" cy="218" r="12"/>
+            <text class="btn-symbol" x="422" y="224">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="snc">
+          <rect class="nodo-rect" id="rect-snc" x="270" y="445" width="120" height="55" fill="#d1c4e9" stroke="#7e57c2"/>
+          <text class="nodo-label" x="330" y="475">SNc</text>
+          <text class="nodo-act" id="act-snc" x="330" y="493">DA 100%</text>
+          <g class="nodo-btn" data-action="info" data-nodo="snc">
+            <circle class="btn-bg" cx="376" cy="460" r="11"/>
+            <text class="btn-symbol" x="376" y="466">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="gpe">
+          <rect class="nodo-rect" id="rect-gpe" x="90" y="380" width="110" height="80" fill="#cfd8dc" stroke="#546e7a"/>
+          <text class="nodo-label" x="145" y="418">GPe</text>
+          <text class="nodo-act" id="act-gpe" x="145" y="442">—</text>
+          <g class="nodo-btn" data-action="info" data-nodo="gpe">
+            <circle class="btn-bg" cx="186" cy="395" r="11"/>
+            <text class="btn-symbol" x="186" y="401">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="stn">
+          <rect class="nodo-rect" id="rect-stn" x="80" y="585" width="135" height="85" fill="#cfd8dc" stroke="#546e7a"/>
+          <text class="nodo-label" x="148" y="624">STN</text>
+          <text class="nodo-act" id="act-stn" x="148" y="650">—</text>
+          <g class="nodo-btn" data-action="info" data-nodo="stn">
+            <circle class="btn-bg" cx="201" cy="600" r="11"/>
+            <text class="btn-symbol" x="201" y="606">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="gpi">
+          <rect class="nodo-rect" id="rect-gpi" x="420" y="585" width="170" height="85" fill="#cfd8dc" stroke="#546e7a"/>
+          <text class="nodo-label" x="505" y="624">GPi / SNr</text>
+          <text class="nodo-act" id="act-gpi" x="505" y="650">—</text>
+          <g class="nodo-btn" data-action="info" data-nodo="gpi">
+            <circle class="btn-bg" cx="576" cy="600" r="11"/>
+            <text class="btn-symbol" x="576" y="606">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="cmpf">
+          <rect class="nodo-rect" id="rect-cmpf" x="510" y="210" width="85" height="50" fill="#b2dfdb" stroke="#00796b"/>
+          <text class="nodo-label" x="552" y="236">CM/Pf</text>
+          <text class="nodo-act" id="act-cmpf" x="552" y="253" style="font-size:13px;">—</text>
+          <g class="nodo-btn" data-action="info" data-nodo="cmpf">
+            <circle class="btn-bg" cx="583" cy="222" r="9"/>
+            <text class="btn-symbol" x="583" y="227" style="font-size:13px;">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="talamo">
+          <rect class="nodo-rect" id="rect-talamo" x="600" y="245" width="80" height="95" fill="#b2dfdb" stroke="#00796b"/>
+          <text class="nodo-label" x="640" y="282">VA/VL</text>
+          <text class="nodo-act" id="act-talamo" x="640" y="305">—</text>
+          <g class="nodo-btn" data-action="info" data-nodo="talamo">
+            <circle class="btn-bg" cx="668" cy="258" r="10"/>
+            <text class="btn-symbol" x="668" y="263" style="font-size:14px;">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="ppn">
+          <rect class="nodo-rect" id="rect-ppn" x="290" y="675" width="170" height="40" fill="#d7ccc8" stroke="#6d4c41"/>
+          <text class="nodo-label" x="375" y="702">PPN</text>
+          <g class="nodo-btn" data-action="info" data-nodo="ppn">
+            <circle class="btn-bg" cx="446" cy="687" r="10"/>
+            <text class="btn-symbol" x="446" y="692" style="font-size:14px;">i</text>
+          </g>
+        </g>
+
+        <g class="nodo" data-nodo="tronco">
+          <rect class="nodo-rect" x="15" y="678" width="90" height="50" fill="#f5f5f5" stroke="#bdbdbd" stroke-dasharray="3,3" style="cursor:default;"/>
+          <text class="nodo-label" x="60" y="703" style="fill:#616161;" data-i18n="troncoLabel">Tronco</text>
+          <text class="nodo-sublabel" x="60" y="720" data-i18n="troncoSub">CPGs · marcha</text>
+        </g>
+      </g>
+
+      <g id="tooltip" style="display:none;">
+        <rect class="tooltip-bg" id="tooltip-bg" x="0" y="0" width="0" height="24"/>
+        <text class="tooltip-text" id="tooltip-text" x="0" y="16">—</text>
+      </g>
+    </svg>
+
+    <div class="leyenda">
+      <div class="leyenda-item">
+        <svg width="46" height="12" viewBox="0 0 46 12"><circle cx="3" cy="6" r="2.5" fill="var(--c-glut)"/><line x1="5" y1="6" x2="38" y2="6" stroke="var(--c-glut)" stroke-width="3"/><path d="M 38 3 L 44 6 L 38 9 z" fill="var(--c-glut)"/></svg>
+        <span class="desc"><span class="neuro" data-i18n="legendGlu">Glutamato</span><span class="efecto" data-i18n="legendGluE">excita</span></span>
+      </div>
+      <div class="leyenda-item">
+        <svg width="46" height="12" viewBox="0 0 46 12"><circle cx="3" cy="6" r="2.5" fill="var(--c-gaba)"/><line x1="5" y1="6" x2="38" y2="6" stroke="var(--c-gaba)" stroke-width="3"/><path d="M 38 3 L 44 6 L 38 9 z" fill="var(--c-gaba)"/></svg>
+        <span class="desc"><span class="neuro" data-i18n="legendGaba">GABA</span><span class="efecto" data-i18n="legendGabaE">inhibe</span></span>
+      </div>
+      <div class="leyenda-item">
+        <svg width="46" height="12" viewBox="0 0 46 12"><circle cx="3" cy="6" r="2.5" fill="var(--c-dopa)"/><line x1="5" y1="6" x2="38" y2="6" stroke="var(--c-dopa)" stroke-width="3"/><path d="M 38 3 L 44 6 L 38 9 z" fill="var(--c-dopa)"/></svg>
+        <span class="desc"><span class="neuro" data-i18n="legendDopa">Dopamina</span><span class="efecto" data-i18n="legendDopaE">modula</span></span>
+      </div>
+    </div>
+  </main>
+
+  <aside class="panel">
+    <h2 data-i18n="panelRightTitle">Output del circuito</h2>
+
+    <div class="output-bloque">
+      <div class="titulo" data-i18n="outputTitle">Output cortical (tálamo → corteza)</div>
+      <div class="estado-cualitativo" id="output-estado">—</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-output" style="background:#2e7d32; width:0%;"></div></div>
+      <div class="interpretacion" id="output-interp" data-i18n="initialMsg">Ajusta el circuito.</div>
+    </div>
+
+    <div class="nota-modelo" id="nota-modelo" style="display:none;">
+      <div class="titulo" data-i18n="modelNoteTitle">Sobre el modelo</div>
+      <div data-i18n="modelNoteText" data-i18n-html="1">
+        <p>La sintomatología motora aparece cuando se pierde aproximadamente <strong>50-60% de la dopamina estriatal</strong> (~60-80% de neuronas dopaminérgicas en SNc). Hasta ese punto, mecanismos compensatorios mantienen la función motora prácticamente normal.</p>
+        <p>Los valores numéricos del modelo son <strong>referenciales</strong>: este es un modelo conceptual simplificado para enseñanza, no un modelo computacional validado.</p>
+      </div>
+    </div>
+
+    <h3 data-i18n="nucleusDetailTitle">Detalle por núcleo</h3>
+    <div id="info-nodo-panel" class="info-nodo placeholder" data-i18n="placeholderInfo" data-i18n-html="1">
+      Toca el botón <strong>i</strong> de cualquier núcleo en el diagrama para ver qué está pasando con él.
+    </div>
+  </aside>
+</div>
+
+<footer>
+  <strong>Carolina Astudillo V.</strong> · <span data-i18n="footer">Modelo conceptual simplificado, basado en Albin (1989), DeLong (1990), Park (2020), Bostan &amp; Strick (2018)</span>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ===========================================================
+     DICCIONARIO DE TRADUCCIONES (i18n)
+     Las siglas de núcleos (STN, GPi, GPe, SNc, CM/Pf, VA/VL, PPN,
+     SMA, PM, M1, CPGs) se mantienen iguales en ambos idiomas.
+     =========================================================== */
+  const i18n = {
+    es: {
+      title: 'Circuito motor de los ganglios basales · Herramienta interactiva',
+      panelLeftTitle: 'Modulación dopaminérgica',
+      sliderLabel: 'Dopamina nigroestriatal',
+      btnReset: 'Restablecer todo',
+      howUseTitle: 'Cómo usar',
+      howUseText: '<strong>Click sobre un núcleo</strong> para apagarlo o encenderlo.<br><strong>Click en el botón <em>i</em></strong> para ver qué está pasando con él.',
+      visualHintTitle: 'Pista visual',
+      visualHintText: 'El <strong>color</strong> del núcleo refleja su descarga.<br>El <strong>grosor</strong> y la <strong>velocidad del flujo</strong> de cada conexión reflejan la fuerza transmitida.',
+      symbolsTitle: 'Convención de símbolos',
+      symbolsText: 'Cada axón comienza con un <strong>círculo</strong> (soma) y termina con una <strong>flecha</strong> (terminal axónico). El neurotransmisor lo indica el color.',
+      panelRightTitle: 'Output del circuito',
+      outputTitle: 'Output cortical (tálamo → corteza)',
+      initialMsg: 'Ajusta el circuito.',
+      nucleusDetailTitle: 'Detalle por núcleo',
+      placeholderInfo: 'Toca el botón <strong>i</strong> de cualquier núcleo en el diagrama para ver qué está pasando con él.',
+      modelNoteTitle: 'Sobre el modelo',
+      modelNoteText: '<p>La sintomatología motora aparece cuando se pierde aproximadamente <strong>50-60% de la dopamina estriatal</strong> (~60-80% de neuronas dopaminérgicas en SNc). Hasta ese punto, mecanismos compensatorios mantienen la función motora prácticamente normal.</p><p>Los valores numéricos del modelo son <strong>referenciales</strong>: este es un modelo conceptual simplificado para enseñanza, no un modelo computacional validado.</p>',
+      legendGlu: 'Glutamato', legendGluE: 'excita',
+      legendGaba: 'GABA', legendGabaE: 'inhibe',
+      legendDopa: 'Dopamina', legendDopaE: 'modula',
+      cortexLabel: 'Corteza cerebral',
+      striatumLabel: 'Estriado', striatumSub: 'dorsolateral · putamen',
+      troncoLabel: 'Tronco', troncoSub: 'CPGs · marcha',
+      talamoLabelInside: 'Tálamo',
+      footer: 'Modelo conceptual simplificado, basado en Albin (1989), DeLong (1990), Park (2020), Bostan &amp; Strick (2018)',
+      qual: { off:'OFF', muyBaja:'muy baja', baja:'baja', media:'media', alta:'alta' },
+      qualCap: { off:'OFF', muyBaja:'Muy baja', baja:'Baja', media:'Media', alta:'Alta' },
+      qualOutput: { critico:'Críticamente reducido', muyRed:'Muy reducido', red:'Reducido', leveRed:'Levemente reducido', normal:'Normal' },
+      dischargeWord: 'Descarga',
+      estriadoActWord: 'Descarga',
+      tip: {
+        'ctx-estriado': 'Glutamato. Corteza excita al estriado (driver principal).',
+        'ctx-stn': 'Glutamato. Vía hiperdirecta: corteza excita directo al STN.',
+        'snc-estriado': 'Dopamina. Facilita D1, inhibe D2.',
+        'cmpf-estriado': 'Glutamato. CM/Pf (tálamo) excita al estriado.',
+        'estriado-gpe': 'GABA. El estriado D2 INHIBE al GPe (inicio vía indirecta).',
+        'estriado-gpi': 'GABA. El estriado D1 INHIBE al GPi (vía directa).',
+        'gpe-stn': 'GABA. El GPe INHIBE al STN.',
+        'stn-gpi': 'Glutamato. El STN EXCITA al GPi.',
+        'gpi-talamo': 'GABA. El GPi INHIBE al tálamo VA/VL (freno tónico).',
+        'gpi-cmpf': 'GABA. El GPi inhibe a CM/Pf (loop intratálamo).',
+        'talamo-ctx': 'Glutamato. El tálamo (VA/VL) EXCITA a la corteza (output del circuito).',
+        'gpi-ppn': 'GABA. El GPi INHIBE al PPN (clave para marcha).',
+        'ppn-tronco': 'Glutamato. El PPN excita CPGs del tronco encefálico.',
+        'ppn-talamo': 'Glutamato. El PPN excita al tálamo VA/VL (vía ascendente).',
+        'ppn-snc': 'Glutamato. El PPN excita a SNc (loop ascendente de modulación).'
+      },
+      clin: {
+        acinSinEstr: { t: 'Acinesia', d: 'Sin estriado el circuito no procesa la señal cortical.' },
+        loopInt: { t: 'Loop interrumpido', d: 'Sin tálamo motor la corteza pierde el retorno.' },
+        hiperc: { t: 'Hipercinesia / discinesias', d: 'Sin freno tónico sobre el tálamo aparecen movimientos involuntarios.' },
+        normal: { t: 'Movimiento normal', d: 'Output cortical adecuado.' },
+        bradiL: { t: 'Bradicinesia leve', d: 'Enlentecimiento sutil.' },
+        bradiM: { t: 'Bradicinesia moderada', d: 'Hipocinesia, dificultad para escalar el movimiento.' },
+        bradiS: { t: 'Bradicinesia severa', d: 'Dificultad de inicio de movimientos, pérdida de automatización.' },
+        acin: { t: 'Acinesia', d: 'Output críticamente reducido.' }
+      },
+      info: {
+        estriado: {
+          titulo: 'Estriado dorsolateral',
+          badge: 'Nodo de entrada',
+          p: 'Putamen sensorimotor. Recibe input excitatorio (glutamato) de corteza motora y CM/Pf. Contiene dos poblaciones de neuronas espinosas medianas: <strong>D1</strong> (vía directa) y <strong>D2</strong> (vía indirecta).',
+          offSection: { titulo: 'APAGADO', p: 'Sin estriado, el circuito pierde su nodo de entrada. La señal cortical no se procesa. <strong>Acinesia total</strong>.' },
+          sectionTitle: 'Qué está pasando ahora',
+          estadoAct: (d2, d1) => `Descarga D2: ${d2} · D1: ${d1}`,
+          dyn: (da) => da >= 70
+            ? 'Dopamina alta: la vía directa (D1) está facilitada y la indirecta (D2) suprimida. <strong>El circuito favorece el movimiento</strong>.'
+            : da >= 30
+            ? 'Dopamina intermedia: el balance D1/D2 se va desplazando hacia la vía indirecta. <strong>El movimiento empieza a costar más</strong>.'
+            : 'Dopamina baja: la vía directa cae y la indirecta domina. <strong>El circuito tiende a suprimir el movimiento</strong>.',
+          recepTitle: 'Receptores dopaminérgicos del estriado',
+          recepD1Chip: 'D1',
+          recepD1: '<strong>Vía directa</strong>. Acoplado a Gs/Golf → ↑ AMPc → facilita la despolarización de la neurona espinosa mediana. Co-expresa sustancia P y dinorfina. La dopamina lo <strong>activa</strong>.',
+          recepD2Chip: 'D2',
+          recepD2: '<strong>Vía indirecta</strong>. Acoplado a Gi/Go → ↓ AMPc → hiperpolariza la neurona. Co-expresa encefalinas. La dopamina lo <strong>inhibe</strong>.',
+          recepNota: 'Esta segregación funcional D1/D2 (Gerfen 1990) es la base molecular del balance directa/indirecta. La pérdida de dopamina hipoactiva la vía directa e hiperactiva la indirecta, lo que explica el output cortical reducido en EP.'
+        },
+        gpe: {
+          titulo: 'GPe — Globo pálido externo', badge: 'Vía indirecta',
+          p: 'Núcleo GABAérgico tónicamente activo. Recibe inhibición del estriado D2 y proyecta inhibición al STN.',
+          offSection: { titulo: 'APAGADO', p: 'Sin GPe, el STN queda desinhibido de forma permanente. La vía indirecta queda hiperactiva. <strong>Similar a estado de déficit dopaminérgico extremo</strong>.' },
+          sectionTitle: 'Qué está pasando ahora',
+          dyn: (v) => v >= 60 ? 'El GPe descarga bien: está manteniendo al STN bajo inhibición tónica.' : v >= 30 ? 'El estriado D2 está aumentando: GPe recibe más GABA y descarga menos. <strong>Esto desinhibe al STN</strong>.' : 'GPe muy inhibido por D2 (alto en EP): el STN se desinhibe casi completamente, alimentando la sobreactividad del GPi.'
+        },
+        gpi: {
+          titulo: 'GPi / SNr — Núcleo de salida', badge: 'Output del circuito',
+          p: 'Núcleo GABAérgico tónicamente activo. Es el <strong>freno permanente</strong> sobre el tálamo motor y sobre el PPN. Recibe inhibición de la vía directa (D1) y excitación de la vía indirecta (vía STN) y de la hiperdirecta.',
+          offSection: { titulo: 'APAGADO', p: 'Sin freno tónico sobre el tálamo, el VA/VL descarga libremente. <strong>Aparecen movimientos involuntarios: balismo, discinesias</strong>.' },
+          sectionTitle: 'Qué está pasando ahora',
+          dyn: (v) => v <= 30 ? 'GPi muy inhibido por D1 (dopamina alta): el tálamo queda <em>liberado</em> y excita la corteza. <strong>El movimiento se facilita</strong>.' : v <= 55 ? 'GPi en rango medio: balance directa/indirecta cercano al normal.' : 'GPi muy activo (D1 baja, STN alto): el tálamo recibe <em>más</em> inhibición y descarga menos. Además, el PPN queda sobreinhibido. <strong>Bradicinesia + alteraciones axiales</strong>.'
+        },
+        stn: {
+          titulo: 'STN — Núcleo subtalámico', badge: 'Vía indirecta + hiperdirecta',
+          p: 'Único núcleo glutamatérgico del circuito. Recibe inhibición del GPe y excitación directa de la corteza (vía hiperdirecta). Excita al GPi.',
+          offSection: { titulo: 'APAGADO', p: 'Sin STN, se pierden la vía indirecta y la hiperdirecta. El GPi queda menos excitado, el tálamo se libera. <strong>Output cortical sube</strong> (efecto similar a lesión terapéutica).' },
+          sectionTitle: 'Qué está pasando ahora',
+          dyn: (v) => v >= 70 ? 'STN <strong>hiperactivo</strong> (desinhibido por GPe bajo): excita fuertemente al GPi. Es el patrón típico en EP. Las oscilaciones beta excesivas en STN son blanco terapéutico de DBS.' : v >= 50 ? 'STN en rango medio: contribución balanceada al GPi.' : 'STN poco activo: vía indirecta debilitada.'
+        },
+        snc: {
+          titulo: 'SNc — Sustancia nigra compacta', badge: 'Modulador dopaminérgico',
+          p: 'Fuente de la dopamina nigroestriatal. Modula al estriado en sentidos opuestos: <strong>facilita D1</strong> (vía directa) e <strong>inhibe D2</strong> (vía indirecta). No es excitadora ni inhibidora pura: ajusta la ganancia del circuito. Recibe excitación ascendente del PPN.',
+          offSection: { titulo: 'APAGADO', p: 'Sin SNc, el estriado pierde toda modulación dopaminérgica. Equivale a depleción total. <strong>Es el escenario fisiopatológico de la EP avanzada</strong>.' },
+          sectionTitle: 'Qué está pasando ahora',
+          estadoAct: (da) => `Dopamina: ${da}%`,
+          dyn: (da) => da >= 60 ? 'SNc descarga normal: D1 facilitado, D2 suprimido. Mecanismos compensatorios mantienen la función motora prácticamente normal hasta aquí.' : da >= 40 ? 'Pérdida ~50% de dopamina estriatal: zona de transición clínica. Empiezan a aparecer los primeros signos motores (bradicinesia leve).' : 'Pérdida severa de dopamina. <strong>Vía indirecta domina, vía directa colapsa</strong>. Cuadro motor clásico de EP.'
+        },
+        talamo: {
+          titulo: 'Tálamo VA/VL', badge: 'Tálamo motor (núcleos ventrales)',
+          p: 'Relay tálamo-cortical motor. Recibe el output GABAérgico del GPi (freno tónico) y excitación del PPN. Cuando se libera, excita la corteza motora y permite el movimiento.',
+          offSection: { titulo: 'APAGADO', p: 'Sin tálamo motor, la corteza pierde el feedback del circuito. <strong>Loop interrumpido, acinesia severa</strong>.' },
+          sectionTitle: 'Qué está pasando ahora',
+          estadoAct: (q) => `Descarga al cortex: ${q}`,
+          dyn: (v) => v >= 70 ? 'Tálamo descargando bien: la corteza recibe el "permiso" para ejecutar el programa motor seleccionado.' : v >= 40 ? 'Tálamo con inhibición aumentada por GPi sobreactivo: <strong>el output cortical cae</strong>.' : 'Tálamo fuertemente inhibido: la corteza apenas recibe input del circuito. <strong>Bradicinesia / acinesia</strong>.'
+        },
+        cmpf: {
+          titulo: 'Tálamo CM/Pf', badge: 'Núcleos intralaminares · driver del estriado',
+          p: 'Centromediano y parafascicular. Núcleos talámicos intralaminares que excitan al estriado (glutamato). Junto con la corteza, son los principales <strong>drivers de entrada</strong> del circuito.',
+          offSection: { titulo: 'APAGADO', p: 'Sin CM/Pf, el estriado pierde uno de sus drivers excitatorios principales. <strong>El circuito completo opera con menor ganancia</strong>.' },
+          sectionTitle: 'Qué está pasando ahora',
+          dyn: (v) => v >= 60 ? 'CM/Pf descargando bien: contribuye al drive excitatorio del estriado.' : 'CM/Pf inhibido por GPi sobreactivo. <strong>Loop disfuncional</strong>: el GPi hiperactivo no solo frena al tálamo motor sino que reduce el drive talámico al estriado.'
+        },
+        ppn: {
+          titulo: 'PPN — Núcleo pedunculopontino', badge: 'Región locomotora mesencefálica',
+          p: 'Parte de la MLR. Recibe inhibición del GPi y proyecta excitación a tres blancos: <strong>SNc</strong> (modula la dopamina), <strong>tálamo VA/VL</strong> (suma drive al output cortical) y <strong>CPGs del tronco</strong> (control de marcha y postura).',
+          offSection: { titulo: 'APAGADO', p: 'Sin PPN se pierde el soporte a CPGs del tronco, la modulación ascendente sobre SNc y la contribución excitatoria al tálamo. <strong>Alteraciones de inicio de marcha, freezing, inestabilidad postural</strong>.' },
+          sectionTitle: 'Qué está pasando ahora',
+          dyn: (v) => v >= 60 ? 'PPN descargando bien: soporte tónico normal al tronco, modulación ascendente sobre SNc y aporte al tálamo.' : v >= 30 ? 'PPN moderadamente sobreinhibido por GPi. Aporte al tálamo y a CPGs disminuido.' : 'PPN <strong>sobreinhibido</strong> por GPi hiperactivo. Mecanismo propuesto en freezing, inestabilidad postural y alteraciones axiales en EP.'
+        }
+      }
+    },
+    en: {
+      title: 'Basal ganglia motor circuit · Interactive tool',
+      panelLeftTitle: 'Dopaminergic modulation',
+      sliderLabel: 'Nigrostriatal dopamine',
+      btnReset: 'Reset all',
+      howUseTitle: 'How to use',
+      howUseText: '<strong>Click on a nucleus</strong> to switch it on or off.<br><strong>Click on the <em>i</em> button</strong> to see what is happening with it.',
+      visualHintTitle: 'Visual cue',
+      visualHintText: 'The <strong>color</strong> of each nucleus reflects its discharge.<br>The <strong>thickness</strong> and the <strong>flow speed</strong> of each connection reflect the transmitted strength.',
+      symbolsTitle: 'Symbol convention',
+      symbolsText: 'Each axon starts with a <strong>circle</strong> (soma) and ends with an <strong>arrow</strong> (axon terminal). Neurotransmitter is encoded by color.',
+      panelRightTitle: 'Circuit output',
+      outputTitle: 'Cortical output (thalamus → cortex)',
+      initialMsg: 'Adjust the circuit.',
+      nucleusDetailTitle: 'Detail per nucleus',
+      placeholderInfo: 'Tap the <strong>i</strong> button of any nucleus in the diagram to see what is happening with it.',
+      modelNoteTitle: 'About the model',
+      modelNoteText: '<p>Motor symptoms appear once approximately <strong>50-60% of striatal dopamine</strong> is lost (~60-80% of dopaminergic neurons in SNc). Up to that point, compensatory mechanisms keep motor function virtually normal.</p><p>Numerical values in the model are <strong>illustrative</strong>: this is a simplified conceptual model for teaching, not a validated computational model.</p>',
+      legendGlu: 'Glutamate', legendGluE: 'excites',
+      legendGaba: 'GABA', legendGabaE: 'inhibits',
+      legendDopa: 'Dopamine', legendDopaE: 'modulates',
+      cortexLabel: 'Cerebral cortex',
+      striatumLabel: 'Striatum', striatumSub: 'dorsolateral · putamen',
+      troncoLabel: 'Brainstem', troncoSub: 'CPGs · gait',
+      talamoLabelInside: 'Thalamus',
+      footer: 'Simplified conceptual model, based on Albin (1989), DeLong (1990), Park (2020), Bostan &amp; Strick (2018)',
+      qual: { off:'OFF', muyBaja:'very low', baja:'low', media:'medium', alta:'high' },
+      qualCap: { off:'OFF', muyBaja:'Very low', baja:'Low', media:'Medium', alta:'High' },
+      qualOutput: { critico:'Critically reduced', muyRed:'Severely reduced', red:'Reduced', leveRed:'Mildly reduced', normal:'Normal' },
+      dischargeWord: 'Discharge',
+      estriadoActWord: 'Discharge',
+      tip: {
+        'ctx-estriado': 'Glutamate. Cortex excites striatum (main driver).',
+        'ctx-stn': 'Glutamate. Hyperdirect pathway: cortex excites STN directly.',
+        'snc-estriado': 'Dopamine. Facilitates D1, inhibits D2.',
+        'cmpf-estriado': 'Glutamate. CM/Pf (thalamus) excites striatum.',
+        'estriado-gpe': 'GABA. Striatal D2 INHIBITS GPe (start of indirect pathway).',
+        'estriado-gpi': 'GABA. Striatal D1 INHIBITS GPi (direct pathway).',
+        'gpe-stn': 'GABA. GPe INHIBITS STN.',
+        'stn-gpi': 'Glutamate. STN EXCITES GPi.',
+        'gpi-talamo': 'GABA. GPi INHIBITS VA/VL thalamus (tonic brake).',
+        'gpi-cmpf': 'GABA. GPi inhibits CM/Pf (intrathalamic loop).',
+        'talamo-ctx': 'Glutamate. Thalamus (VA/VL) EXCITES cortex (circuit output).',
+        'gpi-ppn': 'GABA. GPi INHIBITS PPN (key for gait).',
+        'ppn-tronco': 'Glutamate. PPN excites brainstem CPGs.',
+        'ppn-talamo': 'Glutamate. PPN excites VA/VL thalamus (ascending pathway).',
+        'ppn-snc': 'Glutamate. PPN excites SNc (ascending modulatory loop).'
+      },
+      clin: {
+        acinSinEstr: { t: 'Akinesia', d: 'Without striatum the circuit cannot process the cortical signal.' },
+        loopInt: { t: 'Loop interrupted', d: 'Without motor thalamus, cortex loses the feedback.' },
+        hiperc: { t: 'Hyperkinesia / dyskinesia', d: 'Without tonic thalamic brake, involuntary movements emerge.' },
+        normal: { t: 'Normal movement', d: 'Adequate cortical output.' },
+        bradiL: { t: 'Mild bradykinesia', d: 'Subtle slowness.' },
+        bradiM: { t: 'Moderate bradykinesia', d: 'Hypokinesia, difficulty scaling movement.' },
+        bradiS: { t: 'Severe bradykinesia', d: 'Hesitation, loss of automaticity.' },
+        acin: { t: 'Akinesia', d: 'Critically reduced output.' }
+      },
+      info: {
+        estriado: {
+          titulo: 'Dorsolateral striatum',
+          badge: 'Input node',
+          p: 'Sensorimotor putamen. Receives excitatory input (glutamate) from motor cortex and CM/Pf. Contains two populations of medium spiny neurons: <strong>D1</strong> (direct pathway) and <strong>D2</strong> (indirect pathway).',
+          offSection: { titulo: 'OFF', p: 'Without the striatum, the circuit loses its input node. Cortical signal is not processed. <strong>Full akinesia</strong>.' },
+          sectionTitle: 'What is happening now',
+          estadoAct: (d2, d1) => `Discharge D2: ${d2} · D1: ${d1}`,
+          dyn: (da) => da >= 70
+            ? 'High dopamine: direct pathway (D1) is facilitated and indirect (D2) is suppressed. <strong>The circuit favors movement</strong>.'
+            : da >= 30
+            ? 'Intermediate dopamine: D1/D2 balance shifts toward the indirect pathway. <strong>Movement starts to cost more</strong>.'
+            : 'Low dopamine: direct pathway falls and indirect dominates. <strong>The circuit tends to suppress movement</strong>.',
+          recepTitle: 'Striatal dopamine receptors',
+          recepD1Chip: 'D1',
+          recepD1: '<strong>Direct pathway</strong>. Coupled to Gs/Golf → ↑ cAMP → facilitates depolarization of the medium spiny neuron. Co-expresses substance P and dynorphin. Dopamine <strong>activates</strong> it.',
+          recepD2Chip: 'D2',
+          recepD2: '<strong>Indirect pathway</strong>. Coupled to Gi/Go → ↓ cAMP → hyperpolarizes the neuron. Co-expresses enkephalins. Dopamine <strong>inhibits</strong> it.',
+          recepNota: 'This functional D1/D2 segregation (Gerfen 1990) is the molecular basis of the direct/indirect balance. Dopamine loss hypoactivates the direct pathway and hyperactivates the indirect one, explaining the reduced cortical output in PD.'
+        },
+        gpe: {
+          titulo: 'GPe — External globus pallidus', badge: 'Indirect pathway',
+          p: 'Tonically active GABAergic nucleus. Receives inhibition from striatal D2 and projects inhibition to STN.',
+          offSection: { titulo: 'OFF', p: 'Without GPe, STN is permanently disinhibited. Indirect pathway becomes hyperactive. <strong>Similar to extreme dopaminergic deficit</strong>.' },
+          sectionTitle: 'What is happening now',
+          dyn: (v) => v >= 60 ? 'GPe firing well: keeping STN under tonic inhibition.' : v >= 30 ? 'Striatal D2 rising: GPe receives more GABA and fires less. <strong>This disinhibits STN</strong>.' : 'GPe strongly inhibited by D2 (high in PD): STN is nearly fully disinhibited, fueling GPi overactivity.'
+        },
+        gpi: {
+          titulo: 'GPi / SNr — Output nucleus', badge: 'Circuit output',
+          p: 'Tonically active GABAergic nucleus. The <strong>permanent brake</strong> on motor thalamus and PPN. Receives inhibition from the direct pathway (D1) and excitation from the indirect (via STN) and hyperdirect pathways.',
+          offSection: { titulo: 'OFF', p: 'Without tonic brake on thalamus, VA/VL fires freely. <strong>Involuntary movements appear: ballism, dyskinesia</strong>.' },
+          sectionTitle: 'What is happening now',
+          dyn: (v) => v <= 30 ? 'GPi strongly inhibited by D1 (high dopamine): thalamus is <em>released</em> and excites cortex. <strong>Movement is facilitated</strong>.' : v <= 55 ? 'GPi in mid range: direct/indirect balance close to normal.' : 'GPi highly active (low D1, high STN): thalamus receives <em>more</em> inhibition and fires less. Also PPN becomes over-inhibited. <strong>Bradykinesia + axial impairments</strong>.'
+        },
+        stn: {
+          titulo: 'STN — Subthalamic nucleus', badge: 'Indirect + hyperdirect pathway',
+          p: 'The only glutamatergic nucleus of the circuit. Receives inhibition from GPe and direct excitation from cortex (hyperdirect pathway). Excites GPi.',
+          offSection: { titulo: 'OFF', p: 'Without STN, indirect and hyperdirect pathways are lost. GPi receives less excitation, thalamus is released. <strong>Cortical output rises</strong> (effect similar to therapeutic lesion).' },
+          sectionTitle: 'What is happening now',
+          dyn: (v) => v >= 70 ? 'STN <strong>hyperactive</strong> (disinhibited by low GPe): strongly excites GPi. Typical pattern in PD. Excessive beta oscillations in STN are a therapeutic target for DBS.' : v >= 50 ? 'STN in mid range: balanced contribution to GPi.' : 'STN low: indirect pathway weakened.'
+        },
+        snc: {
+          titulo: 'SNc — Substantia nigra compacta', badge: 'Dopaminergic modulator',
+          p: 'Source of nigrostriatal dopamine. Modulates the striatum in opposite directions: <strong>facilitates D1</strong> (direct pathway) and <strong>inhibits D2</strong> (indirect pathway). Not purely excitatory or inhibitory: it adjusts the gain of the circuit. Receives ascending excitation from PPN.',
+          offSection: { titulo: 'OFF', p: 'Without SNc, the striatum loses all dopaminergic modulation. Equivalent to full depletion. <strong>This is the pathophysiological scenario of advanced PD</strong>.' },
+          sectionTitle: 'What is happening now',
+          estadoAct: (da) => `Dopamine: ${da}%`,
+          dyn: (da) => da >= 60 ? 'SNc firing normally: D1 facilitated, D2 suppressed. Compensatory mechanisms keep motor function virtually normal up to here.' : da >= 40 ? '~50% loss of striatal dopamine: clinical transition zone. First motor signs begin to appear (mild bradykinesia).' : 'Severe dopamine loss. <strong>Indirect pathway dominates, direct pathway collapses</strong>. Classical motor picture of PD.'
+        },
+        talamo: {
+          titulo: 'VA/VL thalamus', badge: 'Motor thalamus (ventral nuclei)',
+          p: 'Thalamocortical motor relay. Receives GABAergic output from GPi (tonic brake) and excitation from PPN. When released, it excites motor cortex and allows movement.',
+          offSection: { titulo: 'OFF', p: 'Without motor thalamus, cortex loses circuit feedback. <strong>Loop interrupted, severe akinesia</strong>.' },
+          sectionTitle: 'What is happening now',
+          estadoAct: (q) => `Discharge to cortex: ${q}`,
+          dyn: (v) => v >= 70 ? 'Thalamus firing well: cortex receives "permission" to execute the selected motor program.' : v >= 40 ? 'Thalamus with increased inhibition by overactive GPi: <strong>cortical output drops</strong>.' : 'Thalamus strongly inhibited: cortex barely receives circuit input. <strong>Bradykinesia / akinesia</strong>.'
+        },
+        cmpf: {
+          titulo: 'CM/Pf thalamus', badge: 'Intralaminar nuclei · striatal driver',
+          p: 'Centromedian and parafascicular. Intralaminar thalamic nuclei that excite the striatum (glutamate). Together with cortex, they are the main <strong>input drivers</strong> of the circuit.',
+          offSection: { titulo: 'OFF', p: 'Without CM/Pf, the striatum loses one of its main excitatory drivers. <strong>The whole circuit operates at lower gain</strong>.' },
+          sectionTitle: 'What is happening now',
+          dyn: (v) => v >= 60 ? 'CM/Pf firing well: contributes to striatal excitatory drive.' : 'CM/Pf inhibited by overactive GPi. <strong>Dysfunctional loop</strong>: hyperactive GPi not only brakes motor thalamus but also reduces thalamic drive to striatum.'
+        },
+        ppn: {
+          titulo: 'PPN — Pedunculopontine nucleus', badge: 'Mesencephalic locomotor region',
+          p: 'Part of the MLR. Receives inhibition from GPi and projects excitation to three targets: <strong>SNc</strong> (modulates dopamine), <strong>VA/VL thalamus</strong> (adds drive to cortical output) and <strong>brainstem CPGs</strong> (gait and posture control).',
+          offSection: { titulo: 'OFF', p: 'Without PPN, support to brainstem CPGs, ascending modulation of SNc, and excitatory contribution to thalamus are lost. <strong>Gait initiation problems, freezing, postural instability</strong>.' },
+          sectionTitle: 'What is happening now',
+          dyn: (v) => v >= 60 ? 'PPN firing well: normal tonic support to brainstem, ascending modulation of SNc and input to thalamus.' : v >= 30 ? 'PPN moderately over-inhibited by GPi. Input to thalamus and CPGs reduced.' : 'PPN <strong>over-inhibited</strong> by hyperactive GPi. Proposed mechanism in freezing, postural instability and axial impairments in PD.'
+        }
+      }
+    }
+  };
+  let lang = 'es';
+  function T() { return i18n[lang]; }
+
+  const estado = {
+    estriado: true, gpe: true, gpi: true, stn: true,
+    snc: true, talamo: true, cmpf: true, ppn: true
+  };
+  let dopamina = 100;
+  let nodoInfoActivo = null;
+
+  const sliderDA = document.getElementById('slider-dopamina');
+  const daValor = document.getElementById('da-valor');
+  const btnReset = document.getElementById('btn-reset');
+  const infoPanel = document.getElementById('info-nodo-panel');
+
+  const colorBase = {
+    corteza: [69, 90, 100], estriado: [69, 90, 100],
+    snc: [126, 87, 194], gpe: [69, 90, 100], stn: [69, 90, 100],
+    gpi: [55, 71, 79], talamo: [0, 137, 123], cmpf: [0, 137, 123],
+    ppn: [109, 76, 65]
+  };
+  const colorBajo = [220, 226, 228];
+
+  function rect(name) { return document.getElementById('rect-' + name); }
+  function actLbl(name) { return document.getElementById('act-' + name); }
+  function connBase(name) { return document.querySelector(`[data-conn="${name}"]`); }
+  function connFlow(name) { return document.querySelector(`[data-flow="${name}"]`); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function colorActiv(rgb, intensidad) {
+    const t = Math.max(0, Math.min(1, intensidad / 100));
+    const r = Math.round(lerp(colorBajo[0], rgb[0], t));
+    const g = Math.round(lerp(colorBajo[1], rgb[1], t));
+    const b = Math.round(lerp(colorBajo[2], rgb[2], t));
+    return `rgb(${r},${g},${b})`;
+  }
+  // Escala cualitativa para descarga de núcleos (sin números defendibles)
+  function qualKey(n) {
+    if (n <= 0) return 'off';
+    if (n < 25) return 'muyBaja';
+    if (n < 50) return 'baja';
+    if (n < 75) return 'media';
+    return 'alta';
+  }
+  function qual(n)    { return T().qual[qualKey(n)]; }      // lowercase para frases
+  function qualCap(n) { return T().qualCap[qualKey(n)]; }   // capitalizado para badges
+
+  // Compensación clínica: hasta 60% de DA el sistema está completo,
+  // entre 40-60% transición, bajo 40% degradación franca.
+  // Refleja el umbral sintomático clásico (Bernheimer 1973; Poewe 2017).
+  function compensar(da) {
+    if (da >= 60) return 100;
+    if (da >= 40) return 60 + (da - 40) * 2;  // 40→60, 60→100
+    return da * 1.5;                          // 0→0, 40→60
+  }
+
+  // Escala cualitativa para el output cortical (umbrales ajustados al modelo compensado)
+  function qualOutput(n) {
+    const t = T().qualOutput;
+    if (n < 25) return { txt: t.critico, color: '#c62828' };
+    if (n < 45) return { txt: t.muyRed,  color: '#c62828' };
+    if (n < 65) return { txt: t.red,     color: '#ef6c00' };
+    if (n < 80) return { txt: t.leveRed, color: '#ef6c00' };
+    return     { txt: t.normal,  color: '#2e7d32' };
+  }
+
+  function calcularCon(toggles, da) {
+    const e = toggles;
+    const da_efectiva = e.snc ? compensar(da) : 0;
+    let estriado_D1 = 0, estriado_D2 = 0;
+    if (e.estriado) {
+      const cmpf_drive = e.cmpf ? 1.0 : 0.65;
+      estriado_D1 = (30 + 0.7 * da_efectiva) * cmpf_drive;
+      estriado_D2 = (30 + 0.7 * (100 - da_efectiva)) * cmpf_drive;
+    }
+    let gpe = e.gpe ? Math.max(0, 90 - 0.7 * estriado_D2) : 0;
+    let stn = 0;
+    if (e.stn) {
+      const baseSTN = 30;
+      const desinhib = 100 - gpe;
+      stn = Math.min(100, baseSTN + 0.6 * desinhib);
+    }
+    let gpi = 0;
+    if (e.gpi) {
+      const inh = 0.7 * estriado_D1;
+      const exc = 0.5 * stn;
+      gpi = Math.max(0, Math.min(100, 60 - inh + exc));
+    }
+    // PPN: inhibido por GPi
+    let ppn = e.ppn ? Math.max(0, 80 - 0.7 * gpi) : 0;
+    // Tálamo: liberado por la caída del freno del GPi
+    let talamo = 0;
+    if (e.talamo) {
+      talamo = Math.max(0, Math.min(100, 100 - gpi));
+    }
+    let cmpf = e.cmpf ? Math.max(0, 80 - 0.5 * gpi) : 0;
+    return { estriado_D1, estriado_D2, gpe, stn, gpi, talamo, ppn, cmpf,
+             output: talamo, corteza_out: talamo, da_efectiva };
+  }
+
+  function flowDuration(activity) {
+    if (activity < 5) return '8s';
+    const dur = 3.5 - (activity / 100) * 3.0;
+    return Math.max(0.5, dur).toFixed(2) + 's';
+  }
+  function strokeWidth(activity) {
+    return (1.5 + (activity / 100) * 6);
+  }
+
+  function interpClinica(s) {
+    const c = T().clin;
+    if (!estado.estriado) return { titulo: c.acinSinEstr.t, desc: c.acinSinEstr.d };
+    if (!estado.talamo)   return { titulo: c.loopInt.t,     desc: c.loopInt.d };
+    if (!estado.gpi)      return { titulo: c.hiperc.t,      desc: c.hiperc.d };
+    if (s.output >= 80) return { titulo: c.normal.t, desc: c.normal.d };
+    if (s.output >= 65) return { titulo: c.bradiL.t, desc: c.bradiL.d };
+    if (s.output >= 45) return { titulo: c.bradiM.t, desc: c.bradiM.d };
+    if (s.output >= 25) return { titulo: c.bradiS.t, desc: c.bradiS.d };
+    return { titulo: c.acin.t, desc: c.acin.d };
+  }
+
+  function infoNucleo(key, s) {
+    const cerrarBtn = '<button class="cerrar" id="btn-cerrar-info">×</button>';
+    const off = !estado[key];
+    const info = T().info[key];
+    if (!info) return `${cerrarBtn}<div class="titulo">${key}</div><p>—</p>`;
+
+    const offBlock = `<div class="seccion"><div class="seccion-titulo">${info.offSection.titulo}</div><p>${info.offSection.p}</p></div>`;
+
+    if (key === 'estriado') {
+      const receptoresBlock = `
+        <div class="receptores-bloque">
+          <h4>${info.recepTitle}</h4>
+          <div class="receptor"><span class="chip d1">${info.recepD1Chip}</span><span>${info.recepD1}</span></div>
+          <div class="receptor"><span class="chip d2">${info.recepD2Chip}</span><span>${info.recepD2}</span></div>
+          <p style="margin-top:8px; font-size:12px; color:#555; line-height:1.45;">${info.recepNota}</p>
+        </div>`;
+      const dinBlock = off ? offBlock : `
+        <div class="estado-act">${info.estadoAct(qual(s.estriado_D2), qual(s.estriado_D1))}</div>
+        <div class="seccion">
+          <div class="seccion-titulo">${info.sectionTitle}</div>
+          <p>${info.dyn(dopamina)}</p>
+        </div>`;
+      return `${cerrarBtn}<div class="titulo">${info.titulo}</div>
+        <div class="badge">${info.badge}</div>
+        <p>${info.p}</p>
+        ${dinBlock}
+        ${receptoresBlock}`;
+    }
+
+    if (key === 'snc') {
+      const dinBlock = off ? offBlock : `
+        <div class="estado-act">${info.estadoAct(dopamina)}</div>
+        <div class="seccion">
+          <div class="seccion-titulo">${info.sectionTitle}</div>
+          <p>${info.dyn(dopamina)}</p>
+        </div>`;
+      return `${cerrarBtn}<div class="titulo">${info.titulo}</div>
+        <div class="badge">${info.badge}</div>
+        <p>${info.p}</p>
+        ${dinBlock}`;
+    }
+
+    if (key === 'talamo') {
+      const dinBlock = off ? offBlock : `
+        <div class="estado-act">${info.estadoAct(qual(s.talamo))}</div>
+        <div class="seccion">
+          <div class="seccion-titulo">${info.sectionTitle}</div>
+          <p>${info.dyn(s.talamo)}</p>
+        </div>`;
+      return `${cerrarBtn}<div class="titulo">${info.titulo}</div>
+        <div class="badge">${info.badge}</div>
+        <p>${info.p}</p>
+        ${dinBlock}`;
+    }
+
+    // gpe, gpi, stn, cmpf, ppn comparten la misma plantilla
+    const valor = s[key];
+    const dinBlock = off ? offBlock : `
+      <div class="estado-act">${T().dischargeWord}: ${qual(valor)}</div>
+      <div class="seccion">
+        <div class="seccion-titulo">${info.sectionTitle}</div>
+        <p>${info.dyn(valor)}</p>
+      </div>`;
+    return `${cerrarBtn}<div class="titulo">${info.titulo}</div>
+      <div class="badge">${info.badge}</div>
+      <p>${info.p}</p>
+      ${dinBlock}`;
+  }
+
+  function actualizar() {
+    const s = calcularCon(estado, dopamina);
+    daValor.textContent = dopamina;
+
+    const activ = {
+      corteza: 95,
+      estriado: estado.estriado ? Math.max(s.estriado_D1, s.estriado_D2) : 0,
+      snc: estado.snc ? dopamina : 0,
+      gpe: s.gpe, stn: s.stn, gpi: s.gpi,
+      talamo: s.talamo, cmpf: s.cmpf, ppn: s.ppn
+    };
+
+    Object.keys(estado).forEach(k => {
+      const r = rect(k);
+      if (!r) return;
+      if (estado[k]) {
+        r.classList.remove('off');
+        r.setAttribute('fill', colorActiv(colorBase[k], activ[k]));
+      } else {
+        r.classList.add('off');
+        r.setAttribute('fill', colorActiv(colorBase[k], 0));
+      }
+    });
+    rect('corteza').setAttribute('fill', colorActiv(colorBase.corteza, activ.corteza));
+
+    document.querySelectorAll('.nodo').forEach(n => {
+      const k = n.dataset.nodo;
+      if (k === 'tronco') return;
+      const a = activ[k] || 0;
+      const off = estado[k] === false;
+      const labels = n.querySelectorAll('.nodo-label, .nodo-sublabel, .nodo-act');
+      labels.forEach(l => {
+        if (off || a < 40) l.style.fill = '#1a237e';
+        else l.style.fill = '#ffffff';
+      });
+    });
+
+    actLbl('estriado').textContent = estado.estriado
+      ? `D2 ${qual(s.estriado_D2)} · D1 ${qual(s.estriado_D1)}` : 'OFF';
+    actLbl('snc').textContent = estado.snc ? `DA ${dopamina}%` : 'OFF';
+    actLbl('gpe').textContent = estado.gpe ? qualCap(s.gpe) : 'OFF';
+    actLbl('stn').textContent = estado.stn ? qualCap(s.stn) : 'OFF';
+    actLbl('gpi').textContent = estado.gpi ? qualCap(s.gpi) : 'OFF';
+    actLbl('talamo').textContent = estado.talamo ? qualCap(s.talamo) : 'OFF';
+    actLbl('cmpf').textContent = estado.cmpf ? qualCap(s.cmpf) : 'OFF';
+
+    const conexionesData = {
+      'ctx-estriado':  { actividad: 95, requiere: ['estriado'] },
+      'ctx-stn':       { actividad: 95, requiere: ['stn'] },
+      'snc-estriado':  { actividad: estado.snc ? dopamina : 0, requiere: ['snc','estriado'] },
+      'cmpf-estriado': { actividad: activ.cmpf, requiere: ['cmpf','estriado'] },
+      'estriado-gpe':  { actividad: s.estriado_D2, requiere: ['estriado','gpe'] },
+      'estriado-gpi':  { actividad: s.estriado_D1, requiere: ['estriado','gpi'] },
+      'gpe-stn':       { actividad: s.gpe, requiere: ['gpe','stn'] },
+      'stn-gpi':       { actividad: s.stn, requiere: ['stn','gpi'] },
+      'gpi-talamo':    { actividad: s.gpi, requiere: ['gpi','talamo'] },
+      'gpi-cmpf':      { actividad: s.gpi, requiere: ['gpi','cmpf'] },
+      'talamo-ctx':    { actividad: s.talamo, requiere: ['talamo'] },
+      'gpi-ppn':       { actividad: s.gpi, requiere: ['gpi','ppn'] },
+      'ppn-tronco':    { actividad: s.ppn, requiere: ['ppn'] },
+      'ppn-talamo':    { actividad: s.ppn, requiere: ['ppn','talamo'] },
+      'ppn-snc':       { actividad: s.ppn, requiere: ['ppn','snc'] }
+    };
+
+    Object.keys(conexionesData).forEach(name => {
+      const cb = connBase(name);
+      const cf = connFlow(name);
+      if (!cb || !cf) return;
+      const d = conexionesData[name];
+      const activa = d.requiere.every(n => estado[n]) && d.actividad > 5;
+      if (activa) {
+        cb.classList.remove('off');
+        cf.classList.remove('off');
+        cb.setAttribute('stroke-width', strokeWidth(d.actividad).toFixed(1));
+        cf.style.setProperty('--flow-dur', flowDuration(d.actividad));
+      } else {
+        cb.classList.add('off');
+        cf.classList.add('off');
+        cb.setAttribute('stroke-width', '2');
+      }
+    });
+
+    const cbHD = connBase('ctx-stn');
+    if (cbHD && !cbHD.classList.contains('off')) {
+      cbHD.setAttribute('stroke-width', (strokeWidth(95) * 1.15).toFixed(1));
+    }
+
+    const outEstado = document.getElementById('output-estado');
+    const qo = qualOutput(s.output);
+    outEstado.textContent = qo.txt;
+    outEstado.style.color = qo.color;
+    const barOut = document.getElementById('bar-output');
+    barOut.style.width = s.output + '%';
+    barOut.style.background = qo.color;
+
+    // Nota "Sobre el modelo": aparece solo cuando se manipula la dopamina
+    // o se apaga la SNc. Por defecto el modelo enseña ganglios basales,
+    // no Parkinson.
+    const notaModelo = document.getElementById('nota-modelo');
+    if (notaModelo) {
+      const mostrar = (dopamina !== 100) || (!estado.snc);
+      notaModelo.style.display = mostrar ? 'block' : 'none';
+    }
+
+    const ic = interpClinica(s);
+    document.getElementById('output-interp').innerHTML = `<strong>${ic.titulo}.</strong> ${ic.desc}`;
+
+    if (nodoInfoActivo) {
+      infoPanel.classList.remove('placeholder');
+      infoPanel.innerHTML = infoNucleo(nodoInfoActivo, s);
+      attachCerrarHandler();
+    }
+  }
+
+  function cerrarInfo() {
+    nodoInfoActivo = null;
+    infoPanel.classList.add('placeholder');
+    infoPanel.innerHTML = T().placeholderInfo;
+    document.querySelectorAll('.nodo-btn.activo').forEach(x => x.classList.remove('activo'));
+  }
+  function attachCerrarHandler() {
+    const btn = document.getElementById('btn-cerrar-info');
+    if (btn) btn.addEventListener('click', cerrarInfo);
+  }
+
+  document.querySelectorAll('.nodo-rect').forEach(r => {
+    r.addEventListener('click', () => {
+      const g = r.closest('.nodo');
+      const n = g && g.dataset.nodo;
+      if (!n || n === 'corteza' || n === 'tronco') return;
+      estado[n] = !estado[n];
+      actualizar();
+    });
+  });
+
+  document.querySelectorAll('.nodo-btn').forEach(b => {
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const nodo = b.dataset.nodo;
+      if (nodoInfoActivo === nodo) {
+        cerrarInfo();
+      } else {
+        nodoInfoActivo = nodo;
+        document.querySelectorAll('.nodo-btn.activo').forEach(x => x.classList.remove('activo'));
+        b.classList.add('activo');
+        actualizar();
+      }
+    });
+  });
+
+  sliderDA.addEventListener('input', () => {
+    dopamina = parseInt(sliderDA.value, 10);
+    actualizar();
+  });
+
+  btnReset.addEventListener('click', () => {
+    Object.keys(estado).forEach(k => estado[k] = true);
+    dopamina = 100;
+    sliderDA.value = 100;
+    cerrarInfo();
+    actualizar();
+  });
+
+  const tooltip = document.getElementById('tooltip');
+  const tooltipBg = document.getElementById('tooltip-bg');
+  const tooltipText = document.getElementById('tooltip-text');
+  const svgEl = document.querySelector('svg.circuito');
+
+  document.querySelectorAll('.conn-base').forEach(c => {
+    c.addEventListener('mousemove', (e) => {
+      const key = c.getAttribute('data-tip-key');
+      const txt = key ? T().tip[key] : c.getAttribute('data-tip');
+      if (!txt) return;
+      const pt = svgEl.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      const ctm = svgEl.getScreenCTM().inverse();
+      const local = pt.matrixTransform(ctm);
+      const w = txt.length * 7.5 + 18;
+      tooltipBg.setAttribute('x', local.x - w/2);
+      tooltipBg.setAttribute('y', local.y - 34);
+      tooltipBg.setAttribute('width', w);
+      tooltipText.setAttribute('x', local.x);
+      tooltipText.setAttribute('y', local.y - 18);
+      tooltipText.textContent = txt;
+      tooltip.style.display = 'block';
+    });
+    c.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+  });
+
+  /* ===========================================================
+     APLICAR IDIOMA: recorre todos los [data-i18n] y rellena.
+     Si data-i18n-html="1", usa innerHTML; si no, textContent.
+     =========================================================== */
+  function aplicarIdioma() {
+    const dict = T();
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      const val = key.split('.').reduce((o, k) => (o != null ? o[k] : undefined), dict);
+      if (val === undefined || val === null) return;
+      if (el.dataset.i18nHtml === '1') el.innerHTML = val;
+      else el.textContent = val;
+    });
+    document.documentElement.lang = lang;
+    document.querySelectorAll('.lang-toggle button').forEach(b => {
+      b.classList.toggle('activo', b.dataset.lang === lang);
+    });
+    actualizar();
+  }
+
+  document.querySelectorAll('.lang-toggle button').forEach(b => {
+    b.addEventListener('click', () => {
+      const newLang = b.dataset.lang;
+      if (newLang === lang) return;
+      lang = newLang;
+      aplicarIdioma();
+    });
+  });
+
+  aplicarIdioma();
+})();
+</script>
+
+</body>
+</html>
